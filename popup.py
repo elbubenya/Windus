@@ -1,5 +1,6 @@
 from variables import popups
 
+
 class Popup:
     def __init__(self, content, pos_y, pos_x):
         self.content = content

@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 def hex_to_ansi(hex_str: str, is_background: bool = False) -> str:
     hex_str = hex_str.lstrip('#')
     r, g, b = tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))

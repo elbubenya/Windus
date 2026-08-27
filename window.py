@@ -1,5 +1,6 @@
 from variables import windows, directions, resolution, cursor_position
 
+
 class Window:
     def __init__(self, pos_y, pos_x, res_y, res_x):
         self.pos_y = pos_y
