@@ -1,6 +1,5 @@
 from variables import windows, popups, cursor_position, last_id, directions, resolution
 
-
 def cursor_move(pressed):
     old_y, old_x = cursor_position["y"], cursor_position["x"]
 
