@@ -22,6 +22,7 @@ popups = {}
 
 cursor_position = {"y": 1, "x": 1}
 last_id = {"value": None}
+window_used = {"value": False}
 
 directions = {
     "w": (-1, 0),
@@ -29,6 +30,8 @@ directions = {
     "a": (0, -1),
     "d": (0, 1),
 }
+
+home_path = "D:\\Python projects\\Windus XP"
 
 resolution = {"y": 28, "x": 60}
 
