@@ -26,8 +26,10 @@ def overlapped_window_id():
             return id, close_state
     return None
 
+
 def get_last_id():
     return last_id["value"]
+
 
 def overlapped_popup_button():
     for popup in popups.values():
@@ -37,6 +39,7 @@ def overlapped_popup_button():
                 return button
     return None
 
+
 def cursor_select(ignore_popups=False):
     if last_id["value"] is None or (overlapped_popup_button() is not None and not ignore_popups):
         return
@@ -44,6 +47,7 @@ def cursor_select(ignore_popups=False):
     id = last_id["value"]
     windows[id].selected = 1 - windows[id].selected
     windows.move_to_end(id, last=False)
+
 
 def cursor_popup():
     popup_button_id = overlapped_popup_button()

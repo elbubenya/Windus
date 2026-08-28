@@ -92,5 +92,6 @@ def new_window(pos_y, pos_x, window_class):
     windows[new_id] = window_class(pos_y, pos_x, 5, 5)
     windows.move_to_end(new_id, last=False)
 
+
 def delete_window(id):
     windows.pop(id)

@@ -15,5 +15,6 @@ class Popup:
         self.res_y = len(self.content_listed)
         self.res_x = max(map(len, self.content_listed), default=0)
 
+
 def new_popup(content, pos_y, pos_x):
     popups[0] = Popup(content, pos_y, pos_x)

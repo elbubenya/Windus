@@ -15,10 +15,6 @@ def track_key(key):
     keyboard.on_release_key(key, lambda _: key_state.__setitem__(key, False))
 
 
-for tracked_key in list(directions) + ["shift"]:
-    track_key(tracked_key)
-
-
 def handle_enter(_):
     window_popup_open = bool(popups) and popups[0].content is window_popup
 
@@ -43,8 +39,6 @@ def handle_enter(_):
         list(map(lambda window: setattr(window, "selected", 0), windows.values()))
 
 
-keyboard.on_press_key("enter", handle_enter)
-
 def main():
     dy, dx = cursor_move(key_state)
 
@@ -58,7 +52,11 @@ def main():
     render()
     time.sleep(0.075)
 
+
 if __name__ == "__main__":
+    keyboard.on_press_key("enter", handle_enter)
+    for tracked_key in list(directions) + ["shift"]:
+        track_key(tracked_key)
     os.system("cls" if os.name == "nt" else "clear")
     while True:
         main()

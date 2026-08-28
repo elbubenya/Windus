@@ -8,6 +8,7 @@ def hex_to_ansi(hex_str: str, is_background: bool = False) -> str:
     color_type = "48" if is_background else "38"
     return f"\033[{color_type};2;{r};{g};{b}m"
 
+
 RESET = "\033[0m"
 
 tile_sheet = {"space": f"{hex_to_ansi('#111111', True)}  {RESET}",
