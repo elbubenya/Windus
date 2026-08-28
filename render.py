@@ -4,6 +4,15 @@ from window import TextWindow
 from variables import windows, popups, cursor_position, resolution, tile_sheet, hex_to_ansi, RESET
 from cursor import overlapped_window_id, overlapped_popup_button, get_last_id
 
+def prerender_txt_content(grid, window):
+    for (content_y, content_x), tile in window.content_listed:
+        grid_y = window.pos_y + content_y
+        grid_x = window.pos_x + content_x
+
+        if (0 <= grid_y < resolution["y"] and
+            0 <= grid_x < resolution["x"]):
+            grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
+
 
 def prerender_windows(grid):
     for window in reversed(windows.values()):
@@ -24,16 +33,8 @@ def prerender_windows(grid):
                 else:
                     grid[y][x] = tile_sheet["space"]
 
-        if not isinstance(window, TextWindow):
-            continue
-
-        for (content_y, content_x), tile in window.content_listed:
-            grid_y = window.pos_y + content_y
-            grid_x = window.pos_x + content_x
-
-            if (0 <= grid_y < resolution["y"] and
-                0 <= grid_x < resolution["x"]):
-                grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
+        if isinstance(window, TextWindow):
+            prerender_txt_content(grid, window)
 
 
 def prerender_popups(grid):
