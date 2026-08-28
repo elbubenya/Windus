@@ -1,9 +1,45 @@
 import sys
 
-from window import TextWindow
-from variables import windows, popups, cursor_position, resolution, tile_sheet, hex_to_ansi, RESET
+from window import TextWindow, ExplorerWindow
+from variables import windows, popups, cursor_position, resolution, tile_sheet, window_used, hex_to_ansi, RESET
 from cursor import overlapped_window_id, overlapped_popup_button, get_last_id
 
+
+def truncate_with_dots(text, max_width, keep_start=False):
+    if len(text) <= max_width:
+        return text
+    if max_width <= 3:
+        return "." * max_width
+    if keep_start:
+        return text[:max_width - 3] + "..."
+    return "..." + text[-(max_width - 3):]
+
+
+def prerender_window_title(grid, window, window_id):
+    max_width = (window.res_x - 2) * 2
+
+    if max_width <= 0:
+        return
+
+    title = truncate_with_dots(str(window_id), max_width, keep_start=True)
+
+    if len(title) == max_width and max_width >= 2:
+        title = truncate_with_dots(str(window_id), max_width - 2, keep_start=True)
+
+    bg = "#777777" if window.selected else "#444444"
+
+    for x, i in enumerate(range(0, len(title), 2), start=1):
+        grid_y = window.pos_y
+        grid_x = window.pos_x + x
+
+        if (0 <= grid_y < resolution["y"] and
+            0 <= grid_x < resolution["x"]):
+            grid[grid_y][grid_x] = (
+                f"{hex_to_ansi('#FFFFFF')}"
+                f"{hex_to_ansi(bg, True)}"
+                f"{title[i:i+2].ljust(2)}"
+                f"{RESET}"
+            )
 
 def prerender_txt_content(grid, window):
     for (content_y, content_x), tile in window.content_listed:
@@ -15,8 +51,67 @@ def prerender_txt_content(grid, window):
             grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
 
 
+def prerender_explorer_content(grid, window):
+    path = str(window.path)
+    max_width = (window.res_x - 2) * 2
+    path = truncate_with_dots(path, max_width)
+
+    for x, i in enumerate(range(0, len(path), 2), start=1):
+        grid_y = window.pos_y + 1
+        grid_x = window.pos_x + x
+
+        if (0 <= grid_y < resolution["y"] and
+            0 <= grid_x < resolution["x"]):
+            grid[grid_y][grid_x] = (
+                f"{hex_to_ansi('#111111', True)}"
+                f"{path[i:i+2].ljust(2)}"
+                f"{RESET}"
+            )
+
+    # Separator
+    separator_y = window.pos_y + 2
+
+    for x in range(window.pos_x + 1, window.endpoint_x):
+        if 0 <= separator_y < resolution["y"] and 0 <= x < resolution["x"]:
+            grid[separator_y][x] = (
+                f"{hex_to_ansi('#777777')}"
+                f"{hex_to_ansi('#111111', True)}"
+                f"——"
+                f"{RESET}"
+            ) if window.selected else (
+                f"{hex_to_ansi('#444444')}"
+                f"{hex_to_ansi('#111111', True)}"
+                f"——"
+                f"{RESET}"
+            )
+
+    # Files / folders
+    for content_y, file, name in window.content_listed:
+
+        if file.is_dir():
+            name = "🗀  " + name
+        elif file.is_file():
+            name = "🗎  " + name
+
+        name = name[:max_width]
+
+        for content_x, i in enumerate(range(0, len(name), 2), start=1):
+            grid_y = window.pos_y + content_y + 2
+            grid_x = window.pos_x + content_x
+
+            if (0 <= grid_y < resolution["y"] and
+                0 <= grid_x < resolution["x"]):
+                tile = name[i:i+2].ljust(2)
+
+                grid[grid_y][grid_x] = (
+                    f"{hex_to_ansi('#111111', True)}"
+                    f"{tile}"
+                    f"{RESET}"
+                )
+
+
 def prerender_windows(grid):
-    for window in reversed(windows.values()):
+    for window_id, window in reversed(windows.items()):
         for y in range(window.pos_y, window.endpoint_y + 1):
             for x in range(window.pos_x, window.endpoint_x + 1):
 
@@ -34,8 +129,13 @@ def prerender_windows(grid):
                 else:
                     grid[y][x] = tile_sheet["space"]
 
+        prerender_window_title(grid, window, window_id)
+
         if isinstance(window, TextWindow):
             prerender_txt_content(grid, window)
+
+        if isinstance(window, ExplorerWindow):
+            prerender_explorer_content(grid, window)
 
 
 def prerender_popups(grid):
@@ -109,6 +209,6 @@ def render():
 
     sys.stdout.write("\033[H")
     sys.stdout.write("\n".join("".join(row) for row in grid))
-    sys.stdout.write(f"\n{overlapped_window_id()} + {get_last_id()}                    ")
-    sys.stdout.write(f"\n{overlapped_popup_button()}                    ")
+    sys.stdout.write(f"\n{overlapped_window_id()} | {get_last_id()}                                        ")
+    sys.stdout.write(f"\n{overlapped_popup_button()}                                        ")
     sys.stdout.flush()
