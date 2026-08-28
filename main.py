@@ -45,8 +45,6 @@ def handle_enter(_):
 
 keyboard.on_press_key("enter", handle_enter)
 
-os.system("cls" if os.name == "nt" else "clear")
-
 def main():
     dy, dx = cursor_move(key_state)
 
@@ -61,5 +59,6 @@ def main():
     time.sleep(0.075)
 
 if __name__ == "__main__":
+    os.system("cls" if os.name == "nt" else "clear")
     while True:
         main()
