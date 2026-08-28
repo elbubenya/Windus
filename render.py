@@ -1,5 +1,4 @@
 import sys
-from rich.console import Console
 from window import TextWindow
 from variables import windows, popups, cursor_position, resolution, tile_sheet, hex_to_ansi, RESET
 from cursor import overlapped_window_id, overlapped_popup_button, get_last_id
