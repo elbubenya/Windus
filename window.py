@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 from variables import windows, directions, resolution, cursor_position
 
 
@@ -87,9 +90,64 @@ class TextWindow(Window):
         return content_listed
 
 
-def new_window(pos_y, pos_x, window_class):
-    new_id = max(windows, default=-1) + 1
-    windows[new_id] = window_class(pos_y, pos_x, 5, 5)
+class ExplorerWindow(Window):
+    def __init__(self, pos_y, pos_x, res_y, res_x, path):
+        super().__init__(pos_y, pos_x, res_y, res_x)
+        self.path = Path(path)
+
+    @property
+    def files(self):
+        return list(self.path.iterdir())
+
+    @property
+    def content_listed(self):
+        content_listed = []
+
+        if self.res_y <= 4:
+            return content_listed
+
+        max_width = (self.res_x - 2) * 2
+        max_rows = self.res_y - 4
+
+        if max_width <= 0 or max_rows <= 0:
+            return content_listed
+
+        files = sorted(
+            self.files,
+            key=lambda file: (not file.is_dir(), file.name.lower())
+        )
+
+        for y, file in enumerate(files[:max_rows], start=1):
+            name = file.name[:max_width]
+
+            content_listed.append((
+                y,
+                file,
+                name
+            ))
+
+        return content_listed
+
+
+def new_window(pos_y, pos_x, window_class, *args):
+    prefix = re.sub(r'(?<!^)(?=[A-Z])', ' ', window_class.__name__)
+
+    ids = [
+        int(id.removeprefix(prefix))
+        for id in windows
+        if id.startswith(prefix)
+    ]
+
+    new_id = f"{prefix} {max(ids, default=-1) + 1}"
+
+    windows[new_id] = window_class(
+        pos_y,
+        pos_x,
+        5,
+        5,
+        *args
+    )
+
     windows.move_to_end(new_id, last=False)
 
 
