@@ -1,4 +1,4 @@
-from variables import windows, popups, cursor_position, last_id, directions, resolution
+from variables import windows, popups, cursor_position, last_id, directions, resolution, window_used
 
 
 def cursor_move(pressed):
@@ -40,13 +40,24 @@ def overlapped_popup_button():
     return None
 
 
-def cursor_select(ignore_popups=False):
+def cursor_select(ignore_popups=False, use=False):
     if last_id["value"] is None or (overlapped_popup_button() is not None and not ignore_popups):
         return
 
     id = last_id["value"]
-    windows[id].selected = 1 - windows[id].selected
+    if not use:
+        windows[id].selected = 1 - windows[id].selected
+    else:
+        windows[id].selected = 2
+        window_used["value"] = True
     windows.move_to_end(id, last=False)
+
+
+def cursor_unselect(_=None):
+    id = last_id["value"]
+    if id in windows:
+        windows[id].selected = 0
+    window_used["value"] = False
 
 
 def cursor_popup():
