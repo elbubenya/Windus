@@ -1,4 +1,21 @@
-from variables import windows, popups, cursor_position, last_id, directions, resolution, window_used
+from variables import windows, popups, cursor_position, last_id, directions, resolution
+from window import ExplorerWindow
+
+
+def update_explorer_selection():
+    for window in windows.values():
+        if not isinstance(window, ExplorerWindow):
+            continue
+
+        window.selected_item = None
+
+        for item_index, (content_y, _, _) in enumerate(window.content_listed):
+            grid_y = window.pos_y + content_y + 2
+
+            if (cursor_position["y"] == grid_y and
+                    window.pos_x < cursor_position["x"] < window.endpoint_x):
+                window.selected_item = item_index
+                break
 
 
 def cursor_move(pressed):
@@ -11,6 +28,8 @@ def cursor_move(pressed):
 
     cursor_position["y"] = min(max(cursor_position["y"], 0), resolution["y"]-1)
     cursor_position["x"] = min(max(cursor_position["x"], 0), resolution["x"]-1)
+
+    update_explorer_selection()
 
     return cursor_position["y"] - old_y, cursor_position["x"] - old_x
 
@@ -27,10 +46,6 @@ def overlapped_window_id():
     return None
 
 
-def get_last_id():
-    return last_id["value"]
-
-
 def overlapped_popup_button():
     for popup in popups.values():
         for y, button in enumerate(popup.content):
@@ -45,19 +60,40 @@ def cursor_select(ignore_popups=False, use=False):
         return
 
     id = last_id["value"]
-    if not use:
-        windows[id].selected = 1 - windows[id].selected
+    window = windows[id]
+
+    if use:
+        if hasattr(window, "activate_use"):
+            window.activate_use()
+    elif ignore_popups:
+        window.selected = True
     else:
-        windows[id].selected = 2
-        window_used["value"] = True
+        on_border = (cursor_position["y"] == window.pos_y or
+                     cursor_position["x"] == window.pos_x or
+                     cursor_position["y"] == window.endpoint_y or
+                     cursor_position["x"] == window.endpoint_x)
+
+        if on_border:
+            if hasattr(window, "activate_use") and window.in_use:
+                window.deactivate_use()
+                window.selected = True
+            else:
+                window.selected = not window.selected
+        elif not hasattr(window, "activate_use"):
+            window.selected = not window.selected
+        else:
+            window.activate_use()
+
     windows.move_to_end(id, last=False)
 
 
-def cursor_unselect(_=None):
+def cursor_deselect(_=None):
     id = last_id["value"]
     if id in windows:
-        windows[id].selected = 0
-    window_used["value"] = False
+        window = windows[id]
+        window.selected = False
+        if hasattr(window, "deactivate_use"):
+            window.deactivate_use()
 
 
 def cursor_popup():

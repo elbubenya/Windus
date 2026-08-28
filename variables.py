@@ -1,5 +1,18 @@
+import json
+
 from collections import OrderedDict
 
+
+def load_config(path="config.json"):
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return json.load(file)
+
+    except FileNotFoundError:
+        return {}
+
+    except json.JSONDecodeError:
+        return {}
 
 def hex_to_ansi(hex_str: str, is_background: bool = False) -> str:
     hex_str = hex_str.lstrip('#')
@@ -10,6 +23,8 @@ def hex_to_ansi(hex_str: str, is_background: bool = False) -> str:
 
 
 RESET = "\033[0m"
+
+config = load_config()
 
 tile_sheet = {"space": f"{hex_to_ansi('#111111', True)}  {RESET}",
               "window_border": f"{hex_to_ansi('#444444')}██{RESET}",
@@ -33,7 +48,10 @@ directions = {
 
 home_path = "D:\\Python projects\\Windus XP"
 
-resolution = {"y": 28, "x": 60}
+resolution = config["resolution"]
+main_key = config["main_key"]
+alt_action_key = config["alt_action_key"]
+deselect_key = config["deselect_key"]
 
 key_state = {key: False for key in directions}
 key_state["shift"] = False

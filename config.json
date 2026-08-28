@@ -1,0 +1,7 @@
+{
+    "resolution": {"y": 36, "x": 67},
+
+    "main_key": "enter",
+    "alt_action_key": "shift",
+    "deselect_key": "esc"
+}

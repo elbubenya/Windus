@@ -1,8 +1,8 @@
 import sys
 
 from window import TextWindow, ExplorerWindow
-from variables import windows, popups, cursor_position, resolution, tile_sheet, window_used, hex_to_ansi, RESET
-from cursor import overlapped_window_id, overlapped_popup_button, get_last_id
+from variables import windows, popups, cursor_position, resolution, tile_sheet, window_used, last_id, hex_to_ansi, RESET
+from cursor import overlapped_window_id, overlapped_popup_button
 
 
 def truncate_with_dots(text, max_width, keep_start=False):
@@ -86,14 +86,16 @@ def prerender_explorer_content(grid, window):
             )
 
     # Files / folders
-    for content_y, file, name in window.content_listed:
+    for item_index, (content_y, file, name) in enumerate(window.content_listed):
 
         if file.is_dir():
-            name = "🗀  " + name
+            name = " 🗀  " + name
         elif file.is_file():
-            name = "🗎  " + name
+            name = " 🗎  " + name
 
         name = name[:max_width]
+
+        selected = item_index == window.selected_item
 
         for content_x, i in enumerate(range(0, len(name), 2), start=1):
             grid_y = window.pos_y + content_y + 2
@@ -101,13 +103,22 @@ def prerender_explorer_content(grid, window):
 
             if (0 <= grid_y < resolution["y"] and
                 0 <= grid_x < resolution["x"]):
+
                 tile = name[i:i+2].ljust(2)
 
-                grid[grid_y][grid_x] = (
-                    f"{hex_to_ansi('#111111', True)}"
-                    f"{tile}"
-                    f"{RESET}"
-                )
+                if selected and window.in_use:
+                    grid[grid_y][grid_x] = (
+                        f"{hex_to_ansi('#000000')}"
+                        f"{hex_to_ansi('#FFFFFF', True)}"
+                        f"{tile}"
+                        f"{RESET}"
+                    )
+                else:
+                    grid[grid_y][grid_x] = (
+                        f"{hex_to_ansi('#111111', True)}"
+                        f"{tile}"
+                        f"{RESET}"
+                    )
 
 
 def prerender_windows(grid):
@@ -181,7 +192,8 @@ def prerender():
     prerender_windows(grid)
     prerender_popups(grid)
 
-    grid[cursor_position["y"]][cursor_position["x"]] = tile_sheet["cursor_0"]
+    if not window_used["value"]:
+        grid[cursor_position["y"]][cursor_position["x"]] = tile_sheet["cursor_0"]
     return grid
 
 
@@ -191,7 +203,7 @@ _last_snapshot = None
 def _snapshot():
     return (
         (cursor_position["y"], cursor_position["x"]),
-        tuple((wid, w.pos_y, w.pos_x, w.res_y, w.res_x, w.selected)
+        tuple((wid, w.pos_y, w.pos_x, w.res_y, w.res_x, w.selected, getattr(w, "in_use", False))
               for wid, w in windows.items()),
         tuple((pid, id(popup)) for pid, popup in popups.items()),
     )
@@ -209,6 +221,6 @@ def render():
 
     sys.stdout.write("\033[H")
     sys.stdout.write("\n".join("".join(row) for row in grid))
-    sys.stdout.write(f"\n{overlapped_window_id()} | {get_last_id()}                                        ")
+    sys.stdout.write(f"\n{overlapped_window_id()} | {last_id['value']}                                        ")
     sys.stdout.write(f"\n{overlapped_popup_button()}                                        ")
     sys.stdout.flush()

@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from variables import windows, directions, resolution, cursor_position
+from variables import windows, directions, resolution, cursor_position, window_used
 
 
 class Window:
@@ -10,7 +10,7 @@ class Window:
         self.pos_x = pos_x
         self.res_y = res_y
         self.res_x = res_x
-        self.selected = 0
+        self.selected = False
 
     @property
     def endpoint_y(self):
@@ -21,12 +21,14 @@ class Window:
         return self.pos_x + self.res_x - 1
 
     def move_window(self, dy, dx):
-        if self.selected:
+        if self.selected and not getattr(self, "in_use", False):
             self.pos_y += dy
             self.pos_x += dx
 
     def scale_window(self, pressed):
-        if self.selected:
+        movable = self.selected and not getattr(self, "in_use", False)
+
+        if movable:
             for key, (dy, dx) in directions.items():
                 if pressed[key]:
                     self.res_y += dy
@@ -35,15 +37,29 @@ class Window:
         self.res_y = max(self.res_y,  2)
         self.res_x = max(self.res_x, 3)
 
-        if self.selected:
+        if movable:
             cursor_position["y"] = max(cursor_position["y"], self.pos_y)
             cursor_position["x"] = max(cursor_position["x"], self.pos_x)
 
 
 class TextWindow(Window):
-    def __init__(self, pos_y, pos_x, res_y, res_x):
+    def __init__(self, pos_y, pos_x, res_y, res_x, path=None):
         super().__init__(pos_y, pos_x, res_y, res_x)
-        self.content = "The quick brown fox jumps over a lazy dog."
+        self.path = path
+        self.in_use = False
+        if self.path is None:
+            self.content = "The quick brown fox jumps over a lazy dog."
+        else:
+            self.content = "Wow, this txt has a path!"
+
+    def activate_use(self):
+        self.selected = True
+        self.in_use = True
+        window_used["value"] = True
+
+    def deactivate_use(self):
+        self.in_use = False
+        window_used["value"] = False
 
     @property
     def content_listed(self):
@@ -94,10 +110,22 @@ class ExplorerWindow(Window):
     def __init__(self, pos_y, pos_x, res_y, res_x, path):
         super().__init__(pos_y, pos_x, res_y, res_x)
         self.path = Path(path)
+        self.selected_item = None
+        self.in_use = False
+
+    def activate_use(self):
+        self.selected = True
+        self.in_use = True
+
+    def deactivate_use(self):
+        self.in_use = False
 
     @property
     def files(self):
-        return list(self.path.iterdir())
+        return sorted(
+            self.path.iterdir(),
+            key=lambda file: (not file.is_dir(), file.name.lower())
+        )
 
     @property
     def content_listed(self):
@@ -112,12 +140,7 @@ class ExplorerWindow(Window):
         if max_width <= 0 or max_rows <= 0:
             return content_listed
 
-        files = sorted(
-            self.files,
-            key=lambda file: (not file.is_dir(), file.name.lower())
-        )
-
-        for y, file in enumerate(files[:max_rows], start=1):
+        for y, file in enumerate(self.files[:max_rows], start=1):
             name = file.name[:max_width]
 
             content_listed.append((

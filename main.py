@@ -2,9 +2,9 @@ import os
 import time
 import keyboard
 
-from variables import windows, popups, cursor_position, directions, key_state, window_used
+from variables import windows, popups, cursor_position, directions, key_state, window_used, main_key, alt_action_key, deselect_key
 from popup import new_popup
-from cursor import cursor_move, cursor_select, cursor_unselect, cursor_popup, \
+from cursor import cursor_move, cursor_select, cursor_deselect, cursor_popup, \
                    overlapped_window_id, overlapped_popup_button
 from popup_templates import desktop_popup, window_popup
 from render import render
@@ -15,6 +15,13 @@ def track_key(key):
     keyboard.on_release_key(key, lambda _: key_state.__setitem__(key, False))
 
 
+def reset_windows():
+    for window in windows.values():
+        window.selected = False
+        if hasattr(window, "deactivate_use"):
+            window.deactivate_use()
+
+
 def handle_enter(_):
     window_popup_open = bool(popups) and popups[0].content is window_popup
 
@@ -22,7 +29,7 @@ def handle_enter(_):
         if overlapped_popup_button() is not None:
             cursor_popup()
         elif overlapped_window_id() is not None and not window_popup_open:
-            if not key_state["shift"]:
+            if not key_state[alt_action_key]:
                 if not overlapped_window_id()[1]:
                     cursor_select()
                 else:
@@ -31,13 +38,13 @@ def handle_enter(_):
                     popups.pop(0)
             else:
                 new_popup(window_popup, cursor_position["y"], cursor_position["x"] + 1)
-                list(map(lambda window: setattr(window, "selected", 0), windows.values()))
+                reset_windows()
         else:
             if popups:
                 popups.pop(0)
             elif not any(window.selected for window in windows.values()):
                 new_popup(desktop_popup, cursor_position["y"], cursor_position["x"] + 1)
-            list(map(lambda window: setattr(window, "selected", 0), windows.values()))
+            reset_windows()
 
 
 def main():
@@ -46,7 +53,7 @@ def main():
 
         if not popups:
             for window in windows.values():
-                if key_state["shift"]:
+                if key_state[alt_action_key]:
                     window.scale_window(key_state)
                 else:
                     window.move_window(dy, dx)
@@ -56,9 +63,9 @@ def main():
 
 
 if __name__ == "__main__":
-    keyboard.on_press_key("enter", handle_enter)
-    keyboard.on_press_key("esc", cursor_unselect)
-    for tracked_key in list(directions) + ["shift"]:
+    keyboard.on_press_key(main_key, handle_enter)
+    keyboard.on_press_key(deselect_key, cursor_deselect)
+    for tracked_key in list(directions) + [alt_action_key]:
         track_key(tracked_key)
     os.system("cls" if os.name == "nt" else "clear")
     while True:

@@ -1,8 +1,6 @@
-from pathlib import Path
-
 from window import new_window, delete_window, Window, TextWindow, ExplorerWindow
-from cursor import get_last_id, cursor_select
-from variables import cursor_position, home_path
+from cursor import cursor_select
+from variables import cursor_position, home_path, last_id
 
 
 desktop_popup = {
@@ -12,7 +10,7 @@ desktop_popup = {
 }
 
 window_popup = {
-    "Delete window": lambda: delete_window(get_last_id()),
+    "Delete window": lambda: delete_window(last_id["value"]),
     "Select window": lambda: cursor_select(True),
     "Use window": lambda: cursor_select(True, True)
 }
