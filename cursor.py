@@ -1,5 +1,5 @@
 from variables import windows, popups, cursor_position, last_id, directions, resolution
-from window import ExplorerWindow
+from explorer_window import ExplorerWindow
 
 
 def update_explorer_selection():
@@ -81,6 +81,10 @@ def cursor_select(ignore_popups=False, use=False):
                 window.selected = not window.selected
         elif not hasattr(window, "activate_use"):
             window.selected = not window.selected
+        elif isinstance(window, ExplorerWindow) and cursor_position["y"] == window.pos_y + 1 and window.in_use:
+            window.activate_path_edit()
+        elif isinstance(window, ExplorerWindow) and window.in_use and window.open_selected():
+            pass
         else:
             window.activate_use()
 

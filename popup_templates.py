@@ -1,4 +1,6 @@
-from window import new_window, delete_window, Window, TextWindow, ExplorerWindow
+from window import new_window, delete_window, Window
+from txt_window import TextWindow
+from explorer_window import ExplorerWindow
 from cursor import cursor_select
 from variables import cursor_position, standart_path, last_id
 
@@ -11,6 +13,6 @@ desktop_popup = {
 
 window_popup = {
     "Delete window": lambda: delete_window(last_id["value"]),
-    "Select window": lambda: cursor_select(True),
-    "Use window": lambda: cursor_select(True, True)
+    "Transform window": lambda: cursor_select(True),
+    "Select window": lambda: cursor_select(True, True)
 }

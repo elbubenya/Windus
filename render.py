@@ -1,7 +1,8 @@
 import sys
 
-from window import TextWindow, ExplorerWindow
-from variables import windows, popups, cursor_position, resolution, tile_sheet, window_used, last_id, hex_to_ansi, RESET
+from txt_window import TextWindow
+from explorer_window import ExplorerWindow
+from variables import windows, popups, cursor_position, resolution, tile_sheet, window_used, text_input, last_id, hex_to_ansi, RESET
 from cursor import overlapped_window_id, overlapped_popup_button
 
 
@@ -41,32 +42,114 @@ def prerender_window_title(grid, window, window_id):
                 f"{RESET}"
             )
 
+def _tile_with_caret(tile, caret_sub):
+    chars = []
+
+    for i, char in enumerate(tile):
+        if i == caret_sub:
+            chars.append(f"{hex_to_ansi('#000000')}{hex_to_ansi('#FFFFFF', True)}{char}{RESET}")
+        else:
+            chars.append(f"{hex_to_ansi('#111111', True)}{char}{RESET}")
+
+    return "".join(chars)
+
+
 def prerender_txt_content(grid, window):
+    caret_row = caret_col = caret_sub = None
+
+    if window.in_use:
+        caret_row, caret_char = window.caret_rowcol((window.res_x - 2) * 2)
+        caret_col = caret_char // 2 + 1
+        caret_sub = caret_char % 2
+
+    caret_drawn = False
+
     for (content_y, content_x), tile in window.content_listed:
         grid_y = window.pos_y + content_y
         grid_x = window.pos_x + content_x
 
+        is_caret = content_y == caret_row and content_x == caret_col
+
+        if is_caret:
+            caret_drawn = True
+
         if (0 <= grid_y < resolution["y"] and
             0 <= grid_x < resolution["x"]):
-            grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
+            if is_caret:
+                grid[grid_y][grid_x] = _tile_with_caret(tile, caret_sub)
+            else:
+                grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
+
+    max_rows = window.res_y - 2
+
+    if window.in_use and not caret_drawn and 1 <= caret_row <= max_rows:
+        grid_y = window.pos_y + caret_row
+        grid_x = window.pos_x + caret_col
+
+        if (window.pos_y < grid_y < window.endpoint_y and
+            window.pos_x < grid_x < window.endpoint_x and
+            0 <= grid_y < resolution["y"] and
+            0 <= grid_x < resolution["x"]):
+            grid[grid_y][grid_x] = _tile_with_caret("  ", caret_sub)
+
+
+def _scrolled_to_caret(text, caret, max_width):
+    """Slides a max_width-wide, "..."-prefixed window over text so caret always stays visible."""
+    if len(text) <= max_width:
+        return text, caret
+
+    if max_width <= 3:
+        return "." * max_width, None
+
+    room = max_width - 3
+    start = max(0, min(caret - room, len(text) - room))
+
+    return "..." + text[start:start + room], 3 + (caret - start)
 
 
 def prerender_explorer_content(grid, window):
-    path = str(window.path)
-    max_width = (window.res_x - 2) * 2
-    path = truncate_with_dots(path, max_width)
+    max_width = (window.res_x - 2) * 2 - 1
+    editing = getattr(window, "editing_path", False)
+
+    if editing:
+        path, caret_char = _scrolled_to_caret(window.path_input, window.caret, max_width)
+    else:
+        path = truncate_with_dots(str(window.path), max_width)
+        caret_char = None
+
+    caret_col = caret_char // 2 + 1 if caret_char is not None else None
+    caret_sub = caret_char % 2 if caret_char is not None else None
+    caret_drawn = False
 
     for x, i in enumerate(range(0, len(path), 2), start=1):
         grid_y = window.pos_y + 1
         grid_x = window.pos_x + x
 
-        if (0 <= grid_y < resolution["y"] and
+        is_caret = editing and x == caret_col
+
+        if is_caret:
+            caret_drawn = True
+
+        if (window.pos_y < grid_y < window.endpoint_y and
+            window.pos_x < grid_x < window.endpoint_x and
+            0 <= grid_y < resolution["y"] and
             0 <= grid_x < resolution["x"]):
-            grid[grid_y][grid_x] = (
-                f"{hex_to_ansi('#111111', True)}"
-                f"{path[i:i+2].ljust(2)}"
-                f"{RESET}"
-            )
+            tile = path[i:i+2].ljust(2)
+
+            if is_caret:
+                grid[grid_y][grid_x] = _tile_with_caret(tile, caret_sub)
+            else:
+                grid[grid_y][grid_x] = f"{hex_to_ansi('#111111', True)}{tile}{RESET}"
+
+    if editing and not caret_drawn and caret_col is not None:
+        grid_y = window.pos_y + 1
+        grid_x = window.pos_x + caret_col
+
+        if (window.pos_y < grid_y < window.endpoint_y and
+            window.pos_x < grid_x < window.endpoint_x and
+            0 <= grid_y < resolution["y"] and
+            0 <= grid_x < resolution["x"]):
+            grid[grid_y][grid_x] = _tile_with_caret("  ", caret_sub)
 
     # Separator
     separator_y = window.pos_y + 2
@@ -192,7 +275,7 @@ def prerender():
     prerender_windows(grid)
     prerender_popups(grid)
 
-    if not window_used["value"]:
+    if not window_used["value"] and not text_input["value"]:
         grid[cursor_position["y"]][cursor_position["x"]] = tile_sheet["cursor_0"]
     return grid
 
@@ -203,7 +286,14 @@ _last_snapshot = None
 def _snapshot():
     return (
         (cursor_position["y"], cursor_position["x"]),
-        tuple((wid, w.pos_y, w.pos_x, w.res_y, w.res_x, w.selected, getattr(w, "in_use", False))
+        tuple((wid, w.pos_y, w.pos_x, w.res_y, w.res_x, w.selected,
+               getattr(w, "in_use", False),
+               getattr(w, "editing_path", False),
+               getattr(w, "content", None),
+               getattr(w, "path", None),
+               getattr(w, "path_input", None),
+               getattr(w, "selected_item", None),
+               getattr(w, "caret", None))
               for wid, w in windows.items()),
         tuple((pid, id(popup)) for pid, popup in popups.items()),
     )

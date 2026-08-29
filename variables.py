@@ -40,6 +40,8 @@ popups = {}
 cursor_position = {"y": 1, "x": 1}
 last_id = {"value": None}
 window_used = {"value": False}
+text_input = {"value": 0}
+suppress_enter = {"value": False}
 
 directions = {
     "w": (-1, 0),
