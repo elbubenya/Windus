@@ -22,7 +22,6 @@ class ExplorerWindow(Window, EditableText):
         self.in_use = True
 
     def open_selected(self):
-        """If selected_item is a folder, navigates into it. Returns whether it navigated."""
         if self.selected_item is None:
             return False
 

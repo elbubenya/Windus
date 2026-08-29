@@ -94,7 +94,6 @@ def prerender_txt_content(grid, window):
 
 
 def _scrolled_to_caret(text, caret, max_width):
-    """Slides a max_width-wide, "..."-prefixed window over text so caret always stays visible."""
     if len(text) <= max_width:
         return text, caret
 
