@@ -3,5 +3,7 @@
 
     "main_key": "enter",
     "alt_action_key": "shift",
-    "deselect_key": "esc"
+    "deselect_key": "esc",
+
+    "standart_path": "D:\\Python projects\\Windus XP"
 }

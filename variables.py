@@ -26,7 +26,9 @@ RESET = "\033[0m"
 
 config = load_config()
 
-tile_sheet = {"space": f"{hex_to_ansi('#111111', True)}  {RESET}",
+tile_sheet = {"file": " 🗆  ",
+              "folder": " 🖿  ",
+              "space": f"{hex_to_ansi('#111111', True)}  {RESET}",
               "window_border": f"{hex_to_ansi('#444444')}██{RESET}",
               "window_border_selected": f"{hex_to_ansi('#777777')}██{RESET}",
               "window_close": f"{hex_to_ansi('#FFFFFF')}{hex_to_ansi('#ff0000', True)}❯❮{RESET}",
@@ -46,12 +48,11 @@ directions = {
     "d": (0, 1),
 }
 
-home_path = "D:\\Python projects\\Windus XP"
-
 resolution = config["resolution"]
 main_key = config["main_key"]
 alt_action_key = config["alt_action_key"]
 deselect_key = config["deselect_key"]
+standart_path = config["standart_path"]
 
 key_state = {key: False for key in directions}
 key_state["shift"] = False

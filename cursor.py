@@ -76,7 +76,7 @@ def cursor_select(ignore_popups=False, use=False):
         if on_border:
             if hasattr(window, "activate_use") and window.in_use:
                 window.deactivate_use()
-                window.selected = True
+                window.selected = False
             else:
                 window.selected = not window.selected
         elif not hasattr(window, "activate_use"):

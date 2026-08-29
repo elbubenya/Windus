@@ -76,12 +76,12 @@ def prerender_explorer_content(grid, window):
             grid[separator_y][x] = (
                 f"{hex_to_ansi('#777777')}"
                 f"{hex_to_ansi('#111111', True)}"
-                f"——"
+                f"▔▔"
                 f"{RESET}"
             ) if window.selected else (
                 f"{hex_to_ansi('#444444')}"
                 f"{hex_to_ansi('#111111', True)}"
-                f"——"
+                f"▔▔"
                 f"{RESET}"
             )
 
@@ -89,9 +89,9 @@ def prerender_explorer_content(grid, window):
     for item_index, (content_y, file, name) in enumerate(window.content_listed):
 
         if file.is_dir():
-            name = " 🗀  " + name
+            name = tile_sheet["folder"] + name
         elif file.is_file():
-            name = " 🗎  " + name
+            name = tile_sheet["file"] + name
 
         name = name[:max_width]
 
