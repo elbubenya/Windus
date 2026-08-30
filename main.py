@@ -4,7 +4,8 @@ import keyboard
 
 from keyboard_input_handler import handle_text_input
 from window import reset_windows
-from explorer_window import path_back
+from explorer_window import get_path_parent, scroll as scroll_explorer
+from txt_window import scroll as scroll_text
 from variables import windows, popups, cursor_position, directions, key_state, \
                       window_used, text_input, main_key, alt_action_key, deselect_key, \
                       parent_path_key, last_id
@@ -20,12 +21,26 @@ def track_key(key):
     keyboard.on_release_key(key, lambda _: key_state.__setitem__(key, False))
 
 
-def handle_left_arrow(_):
+def handle_parent_path(_):
     if not text_input["value"]:
-        path_back(windows.get(last_id["value"]))
+        get_path_parent(windows.get(last_id["value"]))
 
 
-def handle_enter(_):
+def handle_scroll_up(_):
+    if not text_input["value"]:
+        window = windows.get(last_id["value"])
+        scroll_explorer(window, -1)
+        scroll_text(window, -1)
+
+
+def handle_scroll_down(_):
+    if not text_input["value"]:
+        window = windows.get(last_id["value"])
+        scroll_explorer(window, 1)
+        scroll_text(window, 1)
+
+
+def handle_main_key(_):
     window_popup_open = bool(popups) and popups[0].content is window_popup
 
     if not window_used["value"] and not text_input["value"]:
@@ -69,9 +84,11 @@ def main():
 
 
 if __name__ == "__main__":
-    keyboard.on_press_key(main_key, handle_enter)
+    keyboard.on_press_key(main_key, handle_main_key)
     keyboard.on_press_key(deselect_key, cursor_deselect)
-    keyboard.on_press_key(parent_path_key, handle_left_arrow)
+    keyboard.on_press_key(parent_path_key, handle_parent_path)
+    keyboard.on_press_key("down", handle_scroll_down)
+    keyboard.on_press_key("up", handle_scroll_up)
     for tracked_key in list(directions) + [alt_action_key]:
         track_key(tracked_key)
     os.system("cls" if os.name == "nt" else "clear")

@@ -54,29 +54,38 @@ class EditableText:
 
         if dx:
             self.caret = max(0, min(len(self._text), self.caret + dx))
-            return
-
-        if dy and lines:
+        elif dy and lines:
             row, col = self._caret_position(lines)
             target_row = max(0, min(len(lines) - 1, row + dy))
             target_col = min(col, len(lines[target_row][0]))
             self.caret = max(0, min(len(self._text), self._line_offset(lines, target_row) + target_col))
+
+        self._sync_scroll_to_caret(max_width)
+
+    def _sync_scroll_to_caret(self, max_width):
+        """Hook for subclasses that scroll their own viewport (e.g. TextWindow.list_start)."""
 
     def caret_rowcol(self, max_width):
         lines = self._caret_lines(max_width) if max_width > 0 else [(self._text, 0)]
         row, col = self._caret_position(lines)
         return row + 1, col
 
-    def insert_char(self, char):
+    def insert_char(self, char, max_width=None):
         text = self._text
         self._text = text[:self.caret] + char + text[self.caret:]
         self.caret += len(char)
 
-    def backspace(self):
+        if max_width is not None:
+            self._sync_scroll_to_caret(max_width)
+
+    def backspace(self, max_width=None):
         if self.caret > 0:
             text = self._text
             self._text = text[:self.caret - 1] + text[self.caret:]
             self.caret -= 1
+
+        if max_width is not None:
+            self._sync_scroll_to_caret(max_width)
 
 
 def _on_press(key):
@@ -111,9 +120,9 @@ def handle_text_input():
         max_width = (window.res_x - 2) * 2
 
         if key == keyboard.Key.backspace:
-            window.backspace()
+            window.backspace(max_width)
         elif key == keyboard.Key.space:
-            window.insert_char(" ")
+            window.insert_char(" ", max_width)
         elif key == keyboard.Key.enter:
             if text_input["value"] == 2:
                 if hasattr(window, "deactivate_use"):
@@ -121,9 +130,9 @@ def handle_text_input():
                 window.selected = False
                 text_input["value"] = 0
             else:
-                window.insert_char("\n")
+                window.insert_char("\n", max_width)
         elif key in _ARROW_DIRECTIONS:
             dy, dx = _ARROW_DIRECTIONS[key]
             window.move_caret(dy, dx, max_width)
         elif isinstance(key, keyboard.KeyCode) and key.char is not None:
-            window.insert_char(key.char)
+            window.insert_char(key.char, max_width)

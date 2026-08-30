@@ -22,7 +22,10 @@ def prerender_window_title(grid, window, window_id):
     if max_width <= 0:
         return
 
-    title = truncate_with_dots(str(window_id), max_width, keep_start=True)
+    if not isinstance(window, ExplorerWindow):
+        title = truncate_with_dots(str(window_id), max_width, keep_start=True)
+    else:
+        title = truncate_with_dots(str(window_id) + " " + str(window.list_start), max_width, keep_start=True)
 
     if len(title) == max_width and max_width >= 2:
         title = truncate_with_dots(str(window_id), max_width - 2, keep_start=True)
@@ -59,8 +62,13 @@ def prerender_txt_content(grid, window):
 
     if window.in_use:
         caret_row, caret_char = window.caret_rowcol((window.res_x - 2) * 2)
+        caret_row -= getattr(window, "list_start", 0)
         caret_col = caret_char // 2 + 1
         caret_sub = caret_char % 2
+
+        if caret_col > window.res_x - 2:
+            caret_row += 1
+            caret_col = 1
 
     caret_drawn = False
 
@@ -292,7 +300,8 @@ def _snapshot():
                getattr(w, "path", None),
                getattr(w, "path_input", None),
                getattr(w, "selected_item", None),
-               getattr(w, "caret", None))
+               getattr(w, "caret", None),
+               getattr(w, "list_start", None))
               for wid, w in windows.items()),
         tuple((pid, id(popup)) for pid, popup in popups.items()),
     )

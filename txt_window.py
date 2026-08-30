@@ -15,6 +15,7 @@ class TextWindow(Window, EditableText):
         else:
             self.content = "Wow, this txt has a path!"
         self._init_caret()
+        self.list_start = 0
 
     def activate_use(self):
         self.selected = True
@@ -55,6 +56,23 @@ class TextWindow(Window, EditableText):
 
         return lines
 
+    def _sync_scroll_to_caret(self, max_width):
+        max_rows = self.res_y - 2
+
+        if max_rows <= 0:
+            return
+
+        lines = self._caret_lines(max_width) if max_width > 0 else [(self.content, 0)]
+        row, _ = self._caret_position(lines)
+
+        if row < self.list_start:
+            self.list_start = row
+        elif row > self.list_start + max_rows - 1:
+            self.list_start = row - max_rows + 1
+
+        max_list_start = max(0, len(lines) - max_rows)
+        self.list_start = max(0, min(self.list_start, max_list_start))
+
     @property
     def content_listed(self):
         content_listed = []
@@ -70,7 +88,7 @@ class TextWindow(Window, EditableText):
 
         lines = self._caret_lines(max_width)
 
-        for y, (line, _) in enumerate(lines[:max_rows], start=1):
+        for y, (line, _) in enumerate(lines[self.list_start:self.list_start + max_rows], start=1):
             for x, i in enumerate(range(0, len(line), 2), start=1):
                 content_listed.append((
                     (y, x),
@@ -78,3 +96,19 @@ class TextWindow(Window, EditableText):
                 ))
 
         return content_listed
+
+
+def scroll(window, value):
+    if not (isinstance(window, TextWindow) and window.selected):
+        return
+
+    max_width = (window.res_x - 2) * 2
+    max_rows = window.res_y - 2
+
+    if max_width <= 0 or max_rows <= 0:
+        return
+
+    line_count = len(window._caret_lines(max_width))
+    max_list_start = max(0, line_count - max_rows)
+
+    window.list_start = max(0, min(window.list_start + value, max_list_start))

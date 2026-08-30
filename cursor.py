@@ -29,7 +29,8 @@ def cursor_move(pressed):
     cursor_position["y"] = min(max(cursor_position["y"], 0), resolution["y"]-1)
     cursor_position["x"] = min(max(cursor_position["x"], 0), resolution["x"]-1)
 
-    update_explorer_selection()
+    if cursor_position["y"] != old_y or cursor_position["x"] != old_x:
+        update_explorer_selection()
 
     return cursor_position["y"] - old_y, cursor_position["x"] - old_x
 
