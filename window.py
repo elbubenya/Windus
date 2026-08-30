@@ -10,6 +10,7 @@ class Window:
         self.res_y = res_y
         self.res_x = res_x
         self.selected = False
+        self.module = None
 
     @property
     def endpoint_y(self):
@@ -20,12 +21,12 @@ class Window:
         return self.pos_x + self.res_x - 1
 
     def move_window(self, dy, dx):
-        if self.selected and not getattr(self, "in_use", False):
+        if self.selected and not getattr(self.module, "in_use", False):
             self.pos_y += dy
             self.pos_x += dx
 
     def scale_window(self, pressed):
-        movable = self.selected and not getattr(self, "in_use", False)
+        movable = self.selected and not getattr(self.module, "in_use", False)
 
         if movable:
             for key, (dy, dx) in directions.items():
@@ -40,16 +41,21 @@ class Window:
             cursor_position["y"] = max(cursor_position["y"], self.pos_y)
             cursor_position["x"] = max(cursor_position["x"], self.pos_x)
 
+        if self.module is not None:
+            self.module.res_y = self.res_y
+            self.module.res_x = self.res_x
+
 
 def reset_windows():
     for window in windows.values():
         window.selected = False
-        if hasattr(window, "deactivate_use"):
-            window.deactivate_use()
+        if window.module is not None:
+            window.module.deactivate_use()
 
 
-def new_window(pos_y, pos_x, window_class, *args):
-    prefix = re.sub(r'(?<!^)(?=[A-Z])', ' ', window_class.__name__)
+def new_window(pos_y, pos_x, module_class=None, *module_args):
+    prefix = module_class.__name__ if module_class is not None else "Window"
+    prefix = re.sub(r'(?<!^)(?=[A-Z])', ' ', prefix)
 
     ids = [
         int(id.removeprefix(prefix))
@@ -59,14 +65,13 @@ def new_window(pos_y, pos_x, window_class, *args):
 
     new_id = f"{prefix} {max(ids, default=-1) + 1}"
 
-    windows[new_id] = window_class(
-        pos_y,
-        pos_x,
-        5,
-        5,
-        *args
-    )
+    res_y, res_x = 5, 5
+    window = Window(pos_y, pos_x, res_y, res_x)
 
+    if module_class is not None:
+        window.module = module_class(0, 0, res_y, res_x, *module_args)
+
+    windows[new_id] = window
     windows.move_to_end(new_id, last=False)
 
 

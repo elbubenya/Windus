@@ -1,21 +1,4 @@
 from variables import windows, popups, cursor_position, last_id, directions, resolution
-from explorer_window import ExplorerWindow
-
-
-def update_explorer_selection():
-    for window in windows.values():
-        if not isinstance(window, ExplorerWindow):
-            continue
-
-        window.selected_item = None
-
-        for item_index, (content_y, _, _) in enumerate(window.content_listed):
-            grid_y = window.pos_y + content_y + 2
-
-            if (cursor_position["y"] == grid_y and
-                    window.pos_x < cursor_position["x"] < window.endpoint_x):
-                window.selected_item = item_index
-                break
 
 
 def cursor_move(pressed):
@@ -30,7 +13,9 @@ def cursor_move(pressed):
     cursor_position["x"] = min(max(cursor_position["x"], 0), resolution["x"]-1)
 
     if cursor_position["y"] != old_y or cursor_position["x"] != old_x:
-        update_explorer_selection()
+        for window in windows.values():
+            if window.module is not None:
+                window.module.update_hover_selection(cursor_position, window)
 
     return cursor_position["y"] - old_y, cursor_position["x"] - old_x
 
@@ -62,10 +47,11 @@ def cursor_select(ignore_popups=False, use=False):
 
     id = last_id["value"]
     window = windows[id]
+    module = window.module
 
     if use:
-        if hasattr(window, "activate_use"):
-            window.activate_use()
+        if module is not None:
+            module.activate_use()
     elif ignore_popups:
         window.selected = True
     else:
@@ -75,19 +61,17 @@ def cursor_select(ignore_popups=False, use=False):
                      cursor_position["x"] == window.endpoint_x)
 
         if on_border:
-            if hasattr(window, "activate_use") and window.in_use:
-                window.deactivate_use()
+            if module is not None and module.in_use:
+                module.deactivate_use()
                 window.selected = False
             else:
                 window.selected = not window.selected
-        elif not hasattr(window, "activate_use"):
+        elif module is None:
             window.selected = not window.selected
-        elif isinstance(window, ExplorerWindow) and cursor_position["y"] == window.pos_y + 1 and window.in_use:
-            window.activate_path_edit()
-        elif isinstance(window, ExplorerWindow) and window.in_use and window.open_selected():
-            pass
         else:
-            window.activate_use()
+            local_y = cursor_position["y"] - window.pos_y - module.pos_y
+            local_x = cursor_position["x"] - window.pos_x - module.pos_x
+            module.handle_click(local_y, local_x)
 
     windows.move_to_end(id, last=False)
 
@@ -97,8 +81,8 @@ def cursor_deselect(_=None):
     if id in windows:
         window = windows[id]
         window.selected = False
-        if hasattr(window, "deactivate_use"):
-            window.deactivate_use()
+        if window.module is not None:
+            window.module.deactivate_use()
 
 
 def cursor_popup():

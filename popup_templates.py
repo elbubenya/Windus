@@ -1,14 +1,14 @@
-from window import new_window, delete_window, Window
-from txt_window import TextWindow
-from explorer_window import ExplorerWindow
+from window import new_window, delete_window
+from textbox_module import TextboxModule
+from explorer_module import ExplorerModule
 from cursor import cursor_select
-from variables import cursor_position, standart_path, last_id
+from variables import cursor_position, default_path, last_id
 
 
 desktop_popup = {
-    "New window": lambda: new_window(cursor_position["y"], cursor_position["x"], Window),
-    "New text file": lambda: new_window(cursor_position["y"], cursor_position["x"], TextWindow),
-    "File explorer": lambda: new_window(cursor_position["y"], cursor_position["x"], ExplorerWindow, standart_path)
+    "New window": lambda: new_window(cursor_position["y"], cursor_position["x"]),
+    "New text file": lambda: new_window(cursor_position["y"], cursor_position["x"], TextboxModule),
+    "File explorer": lambda: new_window(cursor_position["y"], cursor_position["x"], ExplorerModule, default_path)
 }
 
 window_popup = {

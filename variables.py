@@ -55,7 +55,7 @@ main_key = config["main_key"]
 alt_action_key = config["alt_action_key"]
 deselect_key = config["deselect_key"]
 parent_path_key = config["parent_path_key"]
-standart_path = config["standart_path"]
+default_path = config["standart_path"]
 
 key_state = {key: False for key in directions}
 key_state["shift"] = False

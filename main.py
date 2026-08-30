@@ -2,10 +2,8 @@ import os
 import time
 import keyboard
 
-from keyboard_input_handler import handle_text_input
+from text_input_handler import handle_text_input
 from window import reset_windows
-from explorer_window import get_path_parent, scroll as scroll_explorer
-from txt_window import scroll as scroll_text
 from variables import windows, popups, cursor_position, directions, key_state, \
                       window_used, text_input, main_key, alt_action_key, deselect_key, \
                       parent_path_key, last_id
@@ -23,21 +21,23 @@ def track_key(key):
 
 def handle_parent_path(_):
     if not text_input["value"]:
-        get_path_parent(windows.get(last_id["value"]))
+        window = windows.get(last_id["value"])
+        if window is not None and window.module is not None:
+            window.module.go_to_parent()
 
 
 def handle_scroll_up(_):
     if not text_input["value"]:
         window = windows.get(last_id["value"])
-        scroll_explorer(window, -1)
-        scroll_text(window, -1)
+        if window is not None and window.module is not None:
+            window.module.scroll(-1, window)
 
 
 def handle_scroll_down(_):
     if not text_input["value"]:
         window = windows.get(last_id["value"])
-        scroll_explorer(window, 1)
-        scroll_text(window, 1)
+        if window is not None and window.module is not None:
+            window.module.scroll(1, window)
 
 
 def handle_main_key(_):
